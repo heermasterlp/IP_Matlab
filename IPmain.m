@@ -429,6 +429,19 @@ function btn_bgchange_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_bgchange (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
+cla(handles.axes_img, 'reset');
+axes(handles.axes_img);
+
+gray = handles.GRAY;
+
+gray = 255-gray;
+
+handles.GRAY = gray;
+imshow(gray);
+
+hold on;
+
+guidata(hObject, handles);
 
 % --- Executes on selection change in list_names.
 function list_names_Callback(hObject, eventdata, handles)
