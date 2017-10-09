@@ -6,8 +6,8 @@ dfile = 'ca.dat';
 rfile = 'r.dat';
 
 m = '';
-dlmwrite(dfile,m);
-dlmwrite(rfile,m);
+dlmwrite(dfile, m);
+dlmwrite(rfile, m);
 
 [L,nm] = bwlabel(bw,8);
 stats = regionprops(L,'BoundingBox','Centroid');

@@ -66,6 +66,10 @@ while stop ~= 0
                 for t = 1:np
                     bw(r(t,1),c(t,1)) = 0;
                 end
+            elseif length(id) == 1 | 
+            elseif length(id1) == 1
+            elseif length(id) == 2
+            elseif length(id1) == 2
             end
         end
     end
