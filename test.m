@@ -46,8 +46,29 @@ for i = 1:nm
         in2 = inpolygon(rt_b_x, rt_b_y, rt_a_x, rt_a_y);
         in2 = in1(1:4);
         id2 = find(in2 == 1);
-        fprintf('id1: %d id2: %d \n', length(id1), length(id2));
+        if length(id1) ~= length(id2)
+            fprintf('id1: %d id2: %d \n', length(id1), length(id2));
+        end
+        
+        if length(id1) ~= 4 && length(id1) ~= 2 && length(id1) ~= 1 && length(id1) ~= 0
+            fprintf('id1: %d id2: %d \n', length(id1), length(id2));
+        end
+        
+        % contain
+        if length(id1) == 4
+        end
+        
+        % intersect
+        if length(id1) == 2 || length(id1) == 1 || length(id1) == 4
+            [c,rt,lx,ly,rx,ry,x0,y0] = Merge(rt_av,rt_bv);
+            showrt(rt, 'b');
+        end
+        
+        % disjoint
+        if length(id1) == 0
+        end
     end
 end
 
+fprintf('End \n');
 

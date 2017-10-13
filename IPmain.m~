@@ -22,7 +22,7 @@ function varargout = IPmain(varargin)
 
 % Edit the above text to modify the response to help IPmain
 
-% Last Modified by GUIDE v2.5 09-Oct-2017 17:35:44
+% Last Modified by GUIDE v2.5 09-Oct-2017 17:46:35
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -173,23 +173,19 @@ function btn_denoise_Callback(hObject, eventdata, handles)
 % hObject    handle to btn_denoise (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-
 cla(handles.axes_img, 'reset');
 
-Tdenoise = handles.Tdenoise;
+threshold_denoise = get(handles.sld_threshold_denoise, 'Value');
 
-threshold_den
-
-binary_img = handles.binary_img;
-binary_img = ~binary_img;
+binary_img = ~handles.binary_img;
 
 [L, nm] = bwlabel(binary_img, 8);
 stats = regionprops(L, 'Area');
 
-% Delete areas with less than Tdenoise of pixels
+% Delete areas with less than threshold denoise of pixels
 for i = 1:nm
     a = stats(i).Area;
-    if a <= Tdenoise
+    if a <= threshold_denoise
         [r,c] = find(L == i);
         np = length(r);
         for t = 1:np
@@ -203,6 +199,8 @@ handles.denoise_img = binary_img;
 axes(handles.axes_img);
 imshow(binary_img);
 hold on;
+
+disp('denoise end');
 
 guidata(hObject, handles);
 
@@ -256,6 +254,7 @@ for i = 1:nm
     showrt(v, 'g');
 end
 
+fprintf('contain end\n');
 
 
 % --- Executes on button press in btn_cross.
@@ -354,7 +353,7 @@ end
 
 handles.Bi = Bi;
 % handles.Bi_goc = Bi_goc;
-
+fprintf('cross end\n');
 
 guidata(hObject, handles);
 
@@ -379,6 +378,8 @@ if exist(dirname, 'dir') == 0
 end
 
 RGB = handles.RGB;
+
+[H, W, Z] = size(RGB);
 
 rfile = 'r.dat';
 file = textread(rfile, '%s', 'delimiter', '\n', 'whitespace', '', ...
@@ -405,6 +406,11 @@ for i = 1:narea
         t = str2num(irt{j, 1});
         rt = [rt, t];
     end
+    
+    new_x = max(0, rt(1)-5);
+    new_y = max(0, rt(2)-5);
+    new_w = min()
+    
     
     Bi = imcrop(RGB, rt);
     
@@ -553,8 +559,8 @@ function chx_backgroundchange_Callback(hObject, eventdata, handles)
 
 
 % --- Executes on slider movement.
-function slider3_Callback(hObject, eventdata, handles)
-% hObject    handle to slider3 (see GCBO)
+function sld_threshold_denoise_Callback(hObject, eventdata, handles)
+% hObject    handle to sld_threshold_denoise (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
@@ -563,8 +569,8 @@ function slider3_Callback(hObject, eventdata, handles)
 
 
 % --- Executes during object creation, after setting all properties.
-function slider3_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to slider3 (see GCBO)
+function sld_threshold_denoise_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sld_threshold_denoise (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 

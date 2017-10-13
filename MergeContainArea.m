@@ -39,11 +39,8 @@ while stop ~= 0
             in1 = inpolygon(x,y,x1,y1);
             in1 = in(1:4);
             id1 = find(in1 == 1);
-            
-            fprintf(' id len: %d \n', length(id));
-            fprintf(' id1 len: %d \n', length(id1));
 
-            if length(id) == 0 & length(id1) == 0
+            if length(id) == 0 && length(id1) == 0
                 
             elseif length(id) == 4
                 non = 1;

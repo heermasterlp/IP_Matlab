@@ -91,6 +91,7 @@ function Open_Callback(hObject, eventdata, handles)
 % handles    structure with handles and user data (see GUIDATA)
     cla(handles.axes_img, 'reset');
     cla(handles.axes_subimg, 'reset');
+    set(handles.list_names,'String',{});
     [filename, filepath] = uigetfile({'*.jpg;*.bmp'});
     if ~isequal(filename, 0)
         handles.dir = filepath;
@@ -379,6 +380,8 @@ end
 
 RGB = handles.RGB;
 
+[H, W, Z] = size(RGB);
+
 rfile = 'r.dat';
 file = textread(rfile, '%s', 'delimiter', '\n', 'whitespace', '', ...
         'bufsize', 4095);
@@ -405,7 +408,15 @@ for i = 1:narea
         rt = [rt, t];
     end
     
-    Bi = imcrop(RGB, rt);
+    new_x = max(0, rt(1)-5);
+    new_y = max(0, rt(2)-5);
+    new_w = min(rt(1)+rt(3)+5, W)-rt(1)+5;
+    new_h = min(rt(2)+rt(4)+5, H)-rt(2)+5;
+    
+    new_rt = [new_x, new_y, new_w, new_h];
+    
+    
+    Bi = imcrop(RGB, new_rt);
     
     axes(handles.axes_subimg);
     imshow(Bi);
