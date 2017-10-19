@@ -234,8 +234,12 @@ cla(handles.axes_img, 'reset');
 axes(handles.axes_img);
 
 Trectarea = handles.Trectarea;
+Tseperate = handles.Tseperate;
 
+RGB = handles.RGB;
 denoise_img = handles.denoise_img;
+
+
  
 rbw = MergeContainArea(denoise_img, Trectarea);
 
@@ -243,18 +247,17 @@ handles.rbw = rbw;
  
 imshow(rbw);
 hold on;
-
 guidata(hObject, handles);
 
 [L, nm] = bwlabel(rbw, 8);
-stats = regionprops(L, 'BoundingBox');
-
+stats = regionprops(L, 'BoundingBox'); 
 for i = 1:nm
     rt = stats(i).BoundingBox;
     v = [rt(1), rt(2), rt(3), rt(4)];
     showrt(v, 'g');
 end
 
+guidata(hObject, handles);
 fprintf('contain end\n');
 
 
