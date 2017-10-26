@@ -133,7 +133,11 @@ cla(handles.axes_img, 'reset');
 axes(handles.axes_img);
 
 RGB = handles.RGB;
-GRAY = rgb2gray(RGB);
+if length(size(RGB)) == 2
+    GRAY = RGB;
+elseif length(size(RGB)) == 3
+    GRAY = rgb2gray(RGB);
+end
 
 handles.GRAY = GRAY;
 imshow(GRAY);
@@ -239,127 +243,117 @@ Tseperate = handles.Tseperate;
 RGB = handles.RGB;
 denoise_img = handles.denoise_img;
 
+[L, nm] = bwlabel(denoise_img, 8);
+stats = regionprops(L, 'BoundingBox', 'Centroid', 'Area');
 
- 
-rbw = MergeContainArea(denoise_img, Trectarea);
-
-handles.rbw = rbw;
- 
-imshow(rbw);
-hold on;
-guidata(hObject, handles);
-
-[L, nm] = bwlabel(rbw, 8);
-stats = regionprops(L, 'BoundingBox'); 
+rt_list = {};
+rt_cent_list = {};
 for i = 1:nm
     rt = stats(i).BoundingBox;
+    area = stats(i).Area;
+    ct = stats(i).Centroid;
+    if area < Trectarea
+        continue;
+    end
     v = [rt(1), rt(2), rt(3), rt(4)];
+    rt_list{end+1} = v;
+    rt_cent_list{end+1} = [ct(1), ct(2)];
+end
+
+len = length(rt_list);
+fprintf('len rt: %d \n', len);
+
+rt_results = {};
+rt_index = {};
+for i = 1:len
+    
+    if ~isempty(find([rt_index{:}] == i))
+        continue;
+    end
+    rta = rt_list{i};
+    va = [rta(1) rta(2) rta(3) rta(4)];
+    cta = [va(1)+va(3)/2 va(2)+va(4)/2];
+    ax = [va(1) va(1)+va(3) va(1)+va(3) va(1) va(1)];
+    ay = [va(2) va(2) va(2)+va(4) va(2)+va(4) va(2)];
+    
+    new_rt = va;
+    for j = 1:len
+        if j == i
+            continue;
+        end
+        rtb = rt_list{j};
+        vb = [rtb(1) rtb(2) rtb(3) rtb(4)];
+        ctb = [vb(1)+vb(3)/2 vb(2)+vb(4)/2];
+        
+        bx = [vb(1) vb(1)+vb(3) vb(1)+vb(3) vb(1) vb(1)];
+        by = [vb(2) vb(2) vb(2)+vb(4) vb(2)+vb(4) vb(2)];
+        
+        in1 = inpolygon(bx, by, ax, ay);
+        in1 = in1(1:4);
+        id1 = find(in1==1);
+        
+        in2 = inpolygon(ax, ay, bx, by);
+        in2 = in2(1:4);
+        id2 = find(in2==1);
+        
+        % b in a
+        if length(id1) == 4
+            rt_index{end+1} = j;
+            continue;
+        end
+        
+        % a in b
+        if length(id2) == 4
+            rt_index{end+1} = j;
+            continue;
+        end
+        % Near by with border
+        ct_new = [new_rt(1)+new_rt(3)/2 new_rt(2)+new_rt(4)/2];
+        distance = sqrt((ct_new(1)-ctb(1))^2 + (ct_new(2) - ctb(2))^2);
+        
+        
+        if distance < Tseperate
+            new_x = min(new_rt(1), vb(1));
+            new_y = min(new_rt(2), vb(2));
+            new_w = max(new_rt(1)+new_rt(3), vb(1)+vb(3)) - new_x;
+            new_h = max(new_rt(2)+new_rt(4), vb(2)+vb(4)) - new_y;
+            
+            new_rt = [new_x new_y new_w new_h];
+            rt_index{end+1} = j;
+        end
+        
+    end
+    rt_results{end+1} = new_rt;
+    rt_index{end+1} = i;
+end
+
+handles.rt_results = rt_results;
+
+imshow(RGB);
+for i = 1:length(rt_results)
+    v = rt_results{i};
     showrt(v, 'g');
 end
+
+% rbw = MergeContainArea(denoise_img, Trectarea);
+% 
+% handles.rbw = rbw;
+%  
+% imshow(rbw);
+% hold on;
+% guidata(hObject, handles);
+% 
+% [L, nm] = bwlabel(rbw, 8);
+% stats = regionprops(L, 'BoundingBox'); 
+% for i = 1:nm
+%     rt = stats(i).BoundingBox;
+%     v = [rt(1), rt(2), rt(3), rt(4)];
+%     showrt(v, 'g');
+% end
 
 guidata(hObject, handles);
 fprintf('contain end\n');
 
-
-% --- Executes on button press in btn_cross.
-function btn_cross_Callback(hObject, eventdata, handles)
-% hObject    handle to btn_cross (see GCBO)
-% eventdata  reserved - to be defined in a future version of MATLAB
-% handles    structure with handles and user data (see GUIDATA)
-cla(handles.axes_img, 'reset');
-
-Tseperate = handles.Tseperate;
-
-rbw = handles.rbw;
-bw = handles.binary_img;
-
-axes(handles.axes_img);
-imshow(bw);
-hold on;
-
-MergeCrossArea(rbw, Tseperate);
-
-% show the original with rectangles.
-cla(handles.axes_img, 'reset');
-axes(handles.axes_img);
-
-RGB = handles.RGB;
-imshow(RGB);
-hold on;
-
-rfile = 'r.dat';
-file = textread(rfile, '%s', 'delimiter', '\n', 'whitespace', '', ...
-        'bufsize', 4095);
-nline = length(file);
-narea = nline/2;
-
-for i = 1:narea
-
-    lid = (i - 1) * 2 + 1;
-    icen = strread(file{lid}, '%s');
-    irt = strread(file{lid+1}, '%s');
-    
-    % center of rectangle
-    r_x0 = str2num(irt{1,1});
-    r_y0 = str2num(irt{2,1});
-    r_w = str2num(irt{3,1});
-    r_h = str2num(irt{4,1});
-    
-    % center of gravity
-    rt_lx = ceil(r_x0);
-    rt_ly = ceil(r_y0);
-    rt_rx = ceil(r_x0 + r_w);
-    rt_ry = ceil(r_y0 + r_h);
-    
-    chx_goc_data = get(handles.chx_add_goc, 'Value');
-    if chx_goc_data == 1.0
-        % add goc
-        rect_area = bw(rt_ly:rt_ry, rt_lx:rt_rx);
-    
-        [row_indices, col_indices, values] = find(rect_area == 1);
-    
-        goc_x = mean(col_indices) + rt_lx;
-        goc_y = mean(row_indices) + rt_ly;
-        goc_point = [goc_x; goc_y;];
-      
-        showpt(goc_point, 'go');
-    end
-    
-    % intersected figure
-    chx_add_intersected_data = get(handles.chx_add_intersected, 'Value');
-    if chx_add_intersected_data == 1.0
-        % add intersected lines
-        % left-up to right-bottom
-        showline([rt_ly, rt_lx], [rt_ry, rt_rx]);
-        % right_up to left-bottom
-        showline([rt_ly, rt_rx], [rt_ry, rt_lx]);
-        
-        % left-middle to right-middle
-        rt_x_mid = rt_lx + ceil((rt_rx - rt_lx) / 2);
-        rt_y_mid = rt_ly + ceil((rt_ry - rt_ly) / 2);
-        
-        showline([rt_y_mid, rt_lx], [rt_y_mid, rt_rx]);
-        % up-middle to down-middle
-        showline([rt_ly, rt_x_mid], [rt_ry, rt_x_mid]);
-    end
-    
-    rt = [];
-    for j = 1:4
-        t = str2num(irt{j, 1});
-        rt = [rt, t];
-    end
-    
-    showrt(rt, 'b')
-    
-    Bi = imcrop(RGB, rt);
-
-end
-
-handles.Bi = Bi;
-% handles.Bi_goc = Bi_goc;
-fprintf('cross end\n');
-
-guidata(hObject, handles);
 
 
 % --- Executes on button press in btn_cut.
@@ -382,42 +376,24 @@ if exist(dirname, 'dir') == 0
 end
 
 RGB = handles.RGB;
-
 [H, W, Z] = size(RGB);
 
-rfile = 'r.dat';
-file = textread(rfile, '%s', 'delimiter', '\n', 'whitespace', '', ...
-        'bufsize', 4095);
-nline = length(file);
+rt_results = handles.rt_results;
+if isempty(rt_results)
+    disp('rt_results is empty! \n');
+end
 
-fprintf('r.dat length %d', nline);
-
-narea = nline/2;
-
-subimg_names = {};
-for i = 1:narea
-    cla(handles.axes_subimg, 'reset');
+len = length(rt_results);
+for i = 1:len
     
-    lid = (i - 1) * 2 + 1;
-    icen = strread(file{lid}, '%s');
-    irt = strread(file{lid+1}, '%s');
+    rt = rt_results{i};
     
-    cen = [str2double(icen{1,1}); str2double(icen{2,1})];
-    showpt(cen,'ro');
-    
-    rt = [];
-    for j = 1:4
-        t = str2num(irt{j, 1});
-        rt = [rt, t];
-    end
-    
+    % add 5 pixels
     new_x = max(0, rt(1)-5);
     new_y = max(0, rt(2)-5);
     new_w = min(rt(1)+rt(3)+5, W)-rt(1)+5;
-    new_h = min(rt(2)+rt(4)+5, H)-rt(2)+5;
-    
+    new_h = min(rt(2)+rt(4)+5, H)-rt(2)+5; 
     new_rt = [new_x, new_y, new_w, new_h];
-    
     
     Bi = imcrop(RGB, new_rt);
     
@@ -430,6 +406,8 @@ for i = 1:narea
     
     imwrite(Bi, subimf, 'bmp');
 end
+
+fprintf('cut end\n');
 
 set(handles.list_names,'String',subimg_names);
 
